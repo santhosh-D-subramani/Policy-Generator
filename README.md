@@ -1,15 +1,13 @@
 # privacy_policy_generator
 
-A new Flutter project.
+This is the IOS style Skin for my Playstore application.
 
-## Getting Started
+With this project you can Generate privacy policy and terms of use for your application , It will be required to update in playstore Console of your applicication.
 
-This project is a starting point for a Flutter application.
-
+'You want my project , You can have it'
 A few resources to get you started if this is your first Flutter project:
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+https://github.com/santhosh-D-subramani/Policy-Generator
 
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,

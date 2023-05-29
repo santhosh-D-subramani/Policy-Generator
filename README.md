@@ -6,9 +6,8 @@ With this project you can Generate privacy policy and terms of use for your appl
 
 'You want my project , You can have it'
 
+<a href="https://play.google.com/store/apps/details?id=com.privacy.policy.LS" class="button googleplay left">Play Store</a>
 
-TODO :
-There is bug in the app where the selected type(Free, paid, etc) of app is not replecated in privacy Policy or terms of use. will fix it shortly
 A few resources to get you started if this is your first Flutter project:
 
 https://github.com/santhosh-D-subramani/Policy-Generator

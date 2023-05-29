@@ -1,4 +1,7 @@
+
+import 'package:admob_flutter/admob_flutter.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 class CopyScreen extends StatefulWidget {
@@ -23,20 +26,67 @@ class CopyScreen extends StatefulWidget {
 }
 
 class _CopyScreenState extends State<CopyScreen> {
+
+  late AdmobInterstitial interstitialAd;
   late TextEditingController _textEditingController;
+
+
+  String getInterstitialAdUnitId = 'ca-app-pub-3940256099942544/1033173712';//test Interestial ad ID
+
   @override
   void initState() {
+    interstitialAd = AdmobInterstitial(
+      adUnitId: getInterstitialAdUnitId,
+      listener: (AdmobAdEvent event, Map<String, dynamic>? args) {
+        if (event == AdmobAdEvent.closed) interstitialAd.load();
+        handleEvent(event, args, 'Interstitial');
+      },
+    );
     _textEditingController = TextEditingController();
     _updateParagraph();
+    interstitialAd.load();
     super.initState();
   }
+  void handleEvent(
+      AdmobAdEvent event, Map<String, dynamic>? args, String adType) {
+    switch (event) {
+      case AdmobAdEvent.loaded:
+        if (kDebugMode) {
+          print('New Admob $adType Ad loaded!');
+        }
+        break;
+      case AdmobAdEvent.opened:
+        if (kDebugMode) {
+          print('Admob $adType Ad opened!');
+        }
+        break;
+      case AdmobAdEvent.closed:
+        if (kDebugMode) {
+          print('Admob $adType Ad closed!');
+        }
+        Clipboard.setData(
+            ClipboardData(text: _textEditingController.text))
+            .then((value) => _showAlertDialog(context, 'Copied'));
+        break;
+      case AdmobAdEvent.failedToLoad:
+        if (kDebugMode) {
+          print('Admob $adType failed to load. :(');
+        }
+        break;
 
-  void _showAlertDialog(BuildContext context) {
+      default:
+    }
+  }
+@override
+  void dispose() {interstitialAd.dispose();
+    super.dispose();
+  }
+  void _showAlertDialog(BuildContext context, String message) {
     showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext context) => CupertinoAlertDialog(
         title: const Text('Alert'),
-        content: const Text('Copied'),
+        content:  Text(message),
         actions: <CupertinoDialogAction>[
           CupertinoDialogAction(
             isDestructiveAction: true,
@@ -50,12 +100,6 @@ class _CopyScreenState extends State<CopyScreen> {
     );
   }
 
-  whatType(String theType) {
-    if (theType == 'Free') {
-      return 'Free';
-    } else if (theType == 'Open Source') {}
-  }
-
   void _updateParagraph() {
     setState(() {
       final String name = widget.name;
@@ -63,12 +107,12 @@ class _CopyScreenState extends State<CopyScreen> {
       final String devName = widget.devName;
       final String otherInfo = widget.otherInfo;
       final String title = widget.title;
-      final String type = whatType(widget.typeInfo);
+
       String paragraph = '';
 
       if (title == 'Privacy Policy') {
         paragraph =
-            'Create an app $name as an app Free. This app was released by $devName. It is free of charge and is intended for use as is. This page is used to inform users of this app about our policies and what information we collect if anyone decides to use our app.\n\n'
+            '$devName Created the app $name as ${widget.typeInfo == '2' ? 'a commercial app' : (widget.typeInfo == '3' ? 'a Premium app' : (widget.typeInfo == '4' ? 'a Supported by Ads app' : (widget.typeInfo == '0' ? 'a free of charge app' : (widget.typeInfo == '1' ? 'an open source app' : ''))))}. This app was released by $devName. It is ${widget.typeInfo == '2' ? 'a commercial app' : (widget.typeInfo == '3' ? 'a Premium app' : (widget.typeInfo == '4' ? 'Supported by Ads' : (widget.typeInfo == '0' ? 'free of charge' : (widget.typeInfo == '1' ? 'an open source app' : ''))))} and is intended for use as is. This page is used to inform users of this app about our policies and what information we collect if anyone decides to use our app.\n\n'
             'If you choose to use this application, you agree to give us permission to collect and use information in connection with this policy. The personal information we collect is used to provide and improve the Service. We will not share your information with anyone except as described in this Privacy Policy.\n\n'
             'The terms used in this Privacy Policy have the same meanings as in our Terms and Conditions, which can be accessed in Filak unless otherwise specified in this Privacy Policy.\n\n'
             'Information collection and use\n\n'
@@ -152,8 +196,24 @@ class _CopyScreenState extends State<CopyScreen> {
             ),
             middle: const Text('Generated Content'),
             largeTitle: Text(widget.title),
+            trailing:   GestureDetector(onTap:() async{
+              final isLoaded = await interstitialAd.isLoaded;
+              if (isLoaded ?? false) {
+                interstitialAd.show();
+              } else {
+                _showAlertDialog(context,
+                    'Interstitial ad is still loading but copied this time');
+                Clipboard.setData(
+                    ClipboardData(text: _textEditingController.text))
+                    .then((value) => _showAlertDialog(context, 'Copied'));
+              }
+            },
+                child: const Text('Copy', style: TextStyle(color: CupertinoColors.activeBlue,fontSize: 18),)),
+
           ),
           SliverFillRemaining(
+            hasScrollBody: false,
+            fillOverscroll: true,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: <Widget>[
@@ -165,15 +225,7 @@ class _CopyScreenState extends State<CopyScreen> {
                   ),
                 ),
                 const SizedBox(height: 16.0),
-                CupertinoButton(
-                  child: const Text('Copy'),
-                  onPressed: () {
-                    //ClipboardData(text: _textEditingController.text);
-                    Clipboard.setData(
-                            ClipboardData(text: _textEditingController.text))
-                        .then((value) => _showAlertDialog(context));
-                  },
-                ),
+
               ],
             ),
           ),

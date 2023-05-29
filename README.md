@@ -1,4 +1,7 @@
-# privacy_policy_generator
+# privacy_policy_generator  
+<a href='https://play.google.com/store/apps/details?id=com.privacy.policy.LS&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'>
+  <img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' height='60'/>
+</a>
 
 This is the IOS style Skin for my Playstore application.
 
@@ -6,9 +9,6 @@ With this project you can Generate privacy policy and terms of use for your appl
 
 'You want my project , You can have it'
 
-<a href='https://play.google.com/store/apps/details?id=com.privacy.policy.LS&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'>
-  <img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' height='60'/>
-</a>
 
 
 A few resources to get you started if this is your first Flutter project:

@@ -1,55 +1,92 @@
-import 'package:flutter/cupertino.dart';
-import 'package:privacy_policy_generator/copy_screen.dart';
-import 'package:adaptive_theme/adaptive_theme.dart';
+import 'dart:io';
 
+import 'package:admob_flutter/admob_flutter.dart';
+
+import 'package:flutter/cupertino.dart';
+import 'package:policy_generator/copy_screen.dart';
 const double _kItemExtent = 32.0;
 
 //TODO: typeNames need to be implemented
 const List<String> _typeNames = <String>[
-  'Free',
-  'Open Source',
-  'commercial',
-  'Premium',
-  'Supported by Ads',
+  'Free', //0
+  'Open Source', //1
+  'commercial', //2
+  'Premium', //3
+  'Supported by Ads', //4
 ];
 
 const List<String> _ownerNames = <String>[
   'Developer',
   'Company',
 ];
-
-void main() {
+const String testDevice = '';//debug device ID
+void main() async{
   WidgetsFlutterBinding.ensureInitialized();
+Admob.initialize(testDeviceIds: [testDevice]);
 
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  Brightness? brightness;
+
+  @override
+  void initState() {
+    WidgetsBinding.instance.addObserver(this);
+    brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    if (mounted) {
+      setState(() {
+        brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+      });
+    }
+    super.didChangePlatformBrightness();
+  }
+
+  CupertinoThemeData get _lightTheme => CupertinoThemeData(
+        barBackgroundColor: CupertinoColors.white.withOpacity(.2),
+        brightness: Brightness.light, /* light theme settings */
+      );
+
+  CupertinoThemeData get _darkTheme => CupertinoThemeData(
+        barBackgroundColor: CupertinoColors.black.withOpacity(.2),
+        brightness: Brightness.dark, /* dark theme settings */
+      );
+ whatBrightness(){
+  return brightness == Brightness.dark ? _darkTheme : _lightTheme;
+}
+  @override
   Widget build(BuildContext context) {
-    return CupertinoAdaptiveTheme(
-      light: const CupertinoThemeData(
-        brightness: Brightness.light,
-      ),
-      dark: const CupertinoThemeData(
-        brightness: Brightness.dark,
-      ),
-      initial: AdaptiveThemeMode.light,
-      builder: (CupertinoThemeData theme) => CupertinoApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Policy Generator',
-        theme: theme,
-        home: const HomePage(),
-      ),
+    return CupertinoApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Policy Generator',
+      theme: brightness == Brightness.dark ? _darkTheme : _lightTheme,
+      home:  HomePage(brightness: brightness == Brightness.dark ? Brightness.dark : Brightness.light , ),
     );
   }
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
-
+  const HomePage({Key? key, required this.brightness}) : super(key: key);
+final Brightness brightness;
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -70,6 +107,9 @@ class _HomePageState extends State<HomePage> {
   bool facebook = false;
   bool admob = false;
   bool unity = false;
+
+  final adUnitId =  'ca-app-pub-3940256099942544/6300978111';//test banner ad ID
+
   @override
   void initState() {
     super.initState();
@@ -106,9 +146,6 @@ class _HomePageState extends State<HomePage> {
         facebook ||
         admob ||
         unity;
-    print(isTextFieldEmpty);
-    print(!isSwitchOn);
-
     if (isTextFieldEmpty || !isSwitchOn) {
       showCupertinoModalPopup<void>(
         context: context,
@@ -145,9 +182,9 @@ class _HomePageState extends State<HomePage> {
                     email: _emailController.text,
                     devName: _developerNameController.text,
                     otherInfo: _otherController.text,
-                    typeInfo: '',
+                    typeInfo: _selectedType.toString(),
                   );
-                }));
+                },),);
               },
               child: const Text('Privacy Policy'),
             ),
@@ -164,7 +201,7 @@ class _HomePageState extends State<HomePage> {
                         email: _emailController.text,
                         devName: _developerNameController.text,
                         otherInfo: _otherController.text,
-                        typeInfo: '',
+                        typeInfo: _selectedType.toString(),
                       );
                     },
                   ),
@@ -191,44 +228,52 @@ class _HomePageState extends State<HomePage> {
     _nameController.dispose();
     _emailController.dispose();
     _otherController.dispose();
+
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      child: CustomScrollView(
-        scrollDirection: Axis.vertical,
-        slivers: <Widget>[
-          CupertinoSliverNavigationBar(
-            largeTitle: const Text('Policy Generator'),
-            trailing: GestureDetector(
-              onTap: () {
-                _showActionSheet(context);
-              },
-              child: const Text(
-                'Generate',
-                style: TextStyle(color: CupertinoColors.activeGreen),
+      resizeToAvoidBottomInset: true,
+      child: Stack(
+        fit: StackFit.loose,
+        children: [
+          CustomScrollView(
+            slivers: <Widget>[
+              CupertinoSliverNavigationBar(
+                brightness: widget.brightness,
+                stretch: true,
+                backgroundColor: CupertinoColors.white.withOpacity(.1),
+                largeTitle: const Text('Policy Generator'),
+                trailing: GestureDetector(
+                  onTap: () {
+                    _showActionSheet(context);
+                  },
+                  child: const Text(
+                    'Generate',
+                    style: TextStyle(color: CupertinoColors.activeGreen),
+                  ),
+                ),
               ),
-            ),
-          ),
-          Expanded(
-            child: SliverFillRemaining(
-              child: Column(
-                //mainAxisAlignment: MainAxisAlignment.start,
-                children: <Widget>[
-                  Form(
-                    key: _formKey,
-                    autovalidateMode: AutovalidateMode.always,
-                    onChanged: () {
-                      Form.maybeOf(primaryFocus!.context!)?.save();
-                    },
-                    child: CupertinoFormSection(
+              SliverFillRemaining(
+                fillOverscroll: true,
+                hasScrollBody: false,
+                child: Form(
+                  key: _formKey,
+                  autovalidateMode: AutovalidateMode.always,
+                  onChanged: () {
+                    Form.maybeOf(primaryFocus!.context!)?.save();
+                  },
+                  child: Column(
+                    children: [
+                      CupertinoFormSection(
                       children: [
+                        //App Name
                         CupertinoTextFormFieldRow(
-                          prefix: const Text('Name'),
+                          prefix: const Text('App Name'),
                           controller: _nameController,
-                          placeholder: 'Enter your name here',
+                          placeholder: 'Enter your App name here',
                           validator: (String? value) {
                             if (value == null || value.isEmpty) {
                               return 'Please enter a name';
@@ -236,6 +281,7 @@ class _HomePageState extends State<HomePage> {
                             return null;
                           },
                         ),
+                        //Email
                         CupertinoTextFormFieldRow(
                           prefix: const Text('Email'),
                           controller: _emailController,
@@ -248,276 +294,294 @@ class _HomePageState extends State<HomePage> {
                             return null;
                           },
                         ),
-                        CupertinoListTile(
-                          title: const Text('Type'),
-                          trailing: CupertinoButton(
-                            padding: EdgeInsets.zero,
-                            // Display a CupertinoPicker with list of fruits.
-                            onPressed: () => _showDialog(
-                              CupertinoPicker(
-                                magnification: 1.22,
-                                squeeze: 1.2,
-                                useMagnifier: true,
-                                itemExtent: _kItemExtent,
-                                // This sets the initial item.
-                                scrollController: FixedExtentScrollController(
-                                  initialItem: _selectedType,
+                      ],
+                      ),
+                      CupertinoListSection(
+                        children: [
+                          //Type
+                          CupertinoListTile(
+                            title: const Text('Type'),
+                            trailing: CupertinoButton(
+                              padding: EdgeInsets.zero,
+                              onPressed: () => _showDialog(
+                                CupertinoPicker(
+                                  magnification: 1.22,
+                                  squeeze: 1.2,
+                                  useMagnifier: true,
+                                  itemExtent: _kItemExtent,
+                                  scrollController: FixedExtentScrollController(
+                                    initialItem: _selectedType,
+                                  ),
+                                  onSelectedItemChanged: (int selectedItem) {
+                                    setState(() {
+                                      _selectedType = selectedItem;
+                                    });
+                                  },
+                                  children: List<Widget>.generate(
+                                      _typeNames.length, (int index) {
+                                    return Center(child: Text(_typeNames[index]));
+                                  }),
                                 ),
-                                // This is called when selected item is changed.
-                                onSelectedItemChanged: (int selectedItem) {
-                                  setState(() {
-                                    _selectedType = selectedItem;
-                                  });
-                                },
-                                children: List<Widget>.generate(
-                                    _typeNames.length, (int index) {
-                                  return Center(child: Text(_typeNames[index]));
-                                }),
                               ),
-                            ),
-                            // This displays the selected fruit name.
-                            child: Text(
-                              _typeNames[_selectedType],
-                              style: const TextStyle(
-                                fontSize: 22.0,
+                              child: Text(
+                                _typeNames[_selectedType],
+                                style: const TextStyle(
+                                  fontSize: 22.0,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        CupertinoListTile(
-                          title: const Text('Owner'),
-                          trailing: CupertinoButton(
-                            padding: EdgeInsets.zero,
-                            // Display a CupertinoPicker with list of fruits.
-                            onPressed: () => _showDialog(
-                              CupertinoPicker(
-                                magnification: 1.22,
-                                squeeze: 1.2,
-                                useMagnifier: true,
-                                itemExtent: _kItemExtent,
-                                // This sets the initial item.
-                                scrollController: FixedExtentScrollController(
-                                  initialItem: _selectedOwner,
+                          //owner
+                          CupertinoListTile(
+                            title: const Text('Owner'),
+                            trailing: CupertinoButton(
+                              padding: EdgeInsets.zero,
+                              onPressed: () => _showDialog(
+                                CupertinoPicker(
+                                  magnification: 1.22,
+                                  squeeze: 1.2,
+                                  useMagnifier: true,
+                                  itemExtent: _kItemExtent,
+                                  scrollController: FixedExtentScrollController(
+                                    initialItem: _selectedOwner,
+                                  ),
+                                  onSelectedItemChanged: (int selectedItem) {
+                                    setState(() {
+                                      _selectedOwner = selectedItem;
+                                    });
+                                  },
+                                  children: List<Widget>.generate(
+                                      _ownerNames.length, (int index) {
+                                    return Center(
+                                        child: Text(_ownerNames[index]));
+                                  }),
                                 ),
-                                // This is called when selected item is changed.
-                                onSelectedItemChanged: (int selectedItem) {
-                                  setState(() {
-                                    _selectedOwner = selectedItem;
-                                  });
-                                },
-                                children: List<Widget>.generate(
-                                    _ownerNames.length, (int index) {
-                                  return Center(
-                                      child: Text(_ownerNames[index]));
-                                }),
                               ),
-                            ),
-                            // This displays the selected fruit name.
-                            child: Text(
-                              _ownerNames[_selectedOwner],
-                              style: const TextStyle(
-                                fontSize: 22.0,
+                              // This displays the selected fruit name.
+                              child: Text(
+                                _ownerNames[_selectedOwner],
+                                style: const TextStyle(
+                                  fontSize: 22.0,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        CupertinoTextFormFieldRow(
-                          prefix: _selectedOwner == 0
-                              ? const Text('Developer')
-                              : const Text('Company'),
-                          controller: _developerNameController,
-                          placeholder: _selectedOwner == 0
-                              ? 'Enter Developer Name here'
-                              : 'Enter Company Name here',
-                          validator: (String? value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter a name';
-                            }
-                            return null;
-                          },
-                        ),
-                        CupertinoFormRow(
-                          prefix: ClipRRect(
-                              borderRadius: BorderRadius.circular(8.0),
-                              child: Row(
+                        ],
+                      ),
+                      //Dev name
+                      CupertinoTextFormFieldRow(
+                        prefix: _selectedOwner == 0
+                            ? const Text('Developer')
+                            : const Text('Company'),
+                        controller: _developerNameController,
+                        placeholder: _selectedOwner == 0
+                            ? 'Enter Developer Name here'
+                            : 'Enter Company Name here',
+                        validator: (String? value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a name';
+                          }
+                          return null;
+                        },
+                      ),
+
+                      //providers
+                      CupertinoFormSection(
+                          children: [
+                            CupertinoFormRow(
+                              prefix: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                  child: Row(
+                                    children: [
+                                      Image.asset(
+                                        'images/google play service.png',
+                                        height: 24.0,
+                                        width: 24.0,
+                                      ),
+                                      const Padding(
+                                        padding: EdgeInsets.only(left: 16.0),
+                                        child: Text('Google Play Service'),
+                                      ),
+                                    ],
+                                  )),
+                              child: CupertinoSwitch(
+                                value: playService,
+                                onChanged: (bool value) {
+                                  setState(() {
+                                    playService = value;
+                                  });
+                                },
+                              ),
+                            ),
+
+                            CupertinoFormRow(
+                              prefix: Row(
                                 children: [
                                   Image.asset(
-                                    'images/google play service.png',
-                                    height: 24.0,
-                                    width: 24.0,
+                                    'images/firebase.png',
+                                    height: 24,
+                                    width: 24,
                                   ),
                                   const Padding(
                                     padding: EdgeInsets.only(left: 16.0),
-                                    child: Text('Google Play Service'),
+                                    child: Text('Firebase'),
                                   ),
                                 ],
-                              )),
-                          child: CupertinoSwitch(
-                            value: playService,
-                            onChanged: (bool value) {
-                              setState(() {
-                                playService = value;
-                              });
-                            },
-                          ),
-                        ),
-                        CupertinoFormRow(
-                          prefix: Row(
-                            children: [
-                              Image.asset(
-                                'images/firebase.png',
-                                height: 24,
-                                width: 24,
                               ),
-                              const Padding(
-                                padding: EdgeInsets.only(left: 16.0),
-                                child: Text('Firebase'),
+                              child: CupertinoSwitch(
+                                value: firebase,
+                                onChanged: (bool value) {
+                                  setState(() {
+                                    firebase = value;
+                                  });
+                                },
                               ),
+                            ),
+                            CupertinoFormRow(
+                              prefix: Row(
+                                children: [
+                                  Image.asset(
+                                    'images/firebase analytics.png',
+                                    height: 24,
+                                    width: 24,
+                                  ),
+                                  const Padding(
+                                    padding: EdgeInsets.only(left: 16.0),
+                                    child: Text('Google Analytics For Firebase'),
+                                  ),
+                                ],
+                              ),
+                              child: CupertinoSwitch(
+                                value: googleAnalyticsForFirebase,
+                                onChanged: (bool value) {
+                                  setState(() {
+                                    googleAnalyticsForFirebase = value;
+                                  });
+                                },
+                              ),
+                            ),
+                            CupertinoFormRow(
+                              prefix: Row(
+                                children: [
+                                  Image.asset(
+                                    'images/firebase-crashlytics.png',
+                                    height: 24,
+                                    width: 24,
+                                  ),
+                                  const Padding(
+                                    padding: EdgeInsets.only(left: 16.0),
+                                    child: Text('Firebase CrashAnalytics'),
+                                  ),
+                                ],
+                              ),
+                              child: CupertinoSwitch(
+                                value: firebaseCrashAnalytics,
+                                onChanged: (bool value) {
+                                  setState(() {
+                                    firebaseCrashAnalytics = value;
+                                  });
+                                },
+                              ),
+                            ),
+                            CupertinoFormRow(
+                              prefix: Row(
+                                children: [
+                                  Image.asset(
+                                    'images/fb.png',
+                                    height: 24,
+                                    width: 24,
+                                  ),
+                                  const Padding(
+                                    padding: EdgeInsets.only(left: 16.0),
+                                    child: Text('Facebook Ads'),
+                                  ),
+                                ],
+                              ),
+                              child: CupertinoSwitch(
+                                value: facebook,
+                                onChanged: (bool value) {
+                                  setState(() {
+                                    facebook = value;
+                                  });
+                                },
+                              ),
+                            ),
+                            CupertinoFormRow(
+                              prefix: Row(
+                                children: [
+                                  Image.asset(
+                                    'images/google admob.png',
+                                    height: 24,
+                                    width: 24,
+                                  ),
+                                  const Padding(
+                                    padding: EdgeInsets.only(left: 16.0),
+                                    child: Text('Admob'),
+                                  ),
+                                ],
+                              ),
+                              child: CupertinoSwitch(
+                                value: admob,
+                                onChanged: (bool value) {
+                                  setState(() {
+                                    admob = value;
+                                  });
+                                },
+                              ),
+                            ),
+                            CupertinoFormRow(
+                              prefix: Row(
+                                children: [
+                                  Image.asset(
+                                    'images/unity.png',
+                                    height: 24,
+                                    width: 24,
+                                  ),
+                                  const Padding(
+                                    padding: EdgeInsets.only(left: 16.0),
+                                    child: Text('Unity Ads'),
+                                  ),
+                                ],
+                              ),
+                              child: CupertinoSwitch(
+                                value: unity,
+                                onChanged: (bool value) {
+                                  setState(() {
+                                    unity = value;
+                                  });
+                                },
+                              ),
+                            ),
+                            const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Text(
+                                '* if you have any other providers than listed add it below',
+                                style: TextStyle(fontSize: 14),
+                              ),
+                            ),
+                            CupertinoTextFormFieldRow(
+                              prefix: const Text('Other'),
+                              controller: _otherController,
+                              placeholder: 'Enter your Other Providers',
+                            ),
+                            const SizedBox(height: 50.0,),
                             ],
-                          ),
-                          child: CupertinoSwitch(
-                            value: firebase,
-                            onChanged: (bool value) {
-                              setState(() {
-                                firebase = value;
-                              });
-                            },
-                          ),
-                        ),
-                        CupertinoFormRow(
-                          prefix: Row(
-                            children: [
-                              Image.asset(
-                                'images/firebase analytics.png',
-                                height: 24,
-                                width: 24,
-                              ),
-                              const Padding(
-                                padding: EdgeInsets.only(left: 16.0),
-                                child: Text('Google Analytics For Firebase'),
-                              ),
-                            ],
-                          ),
-                          child: CupertinoSwitch(
-                            value: googleAnalyticsForFirebase,
-                            onChanged: (bool value) {
-                              setState(() {
-                                googleAnalyticsForFirebase = value;
-                              });
-                            },
-                          ),
-                        ),
-                        CupertinoFormRow(
-                          prefix: Row(
-                            children: [
-                              Image.asset(
-                                'images/firebase-crashlytics.png',
-                                height: 24,
-                                width: 24,
-                              ),
-                              const Padding(
-                                padding: EdgeInsets.only(left: 16.0),
-                                child: Text('Firebase CrashAnalytics'),
-                              ),
-                            ],
-                          ),
-                          child: CupertinoSwitch(
-                            value: firebaseCrashAnalytics,
-                            onChanged: (bool value) {
-                              setState(() {
-                                firebaseCrashAnalytics = value;
-                              });
-                            },
-                          ),
-                        ),
-                        CupertinoFormRow(
-                          prefix: Row(
-                            children: [
-                              Image.asset(
-                                'images/fb.png',
-                                height: 24,
-                                width: 24,
-                              ),
-                              const Padding(
-                                padding: EdgeInsets.only(left: 16.0),
-                                child: Text('Facebook Ads'),
-                              ),
-                            ],
-                          ),
-                          child: CupertinoSwitch(
-                            value: facebook,
-                            onChanged: (bool value) {
-                              setState(() {
-                                facebook = value;
-                              });
-                            },
-                          ),
-                        ),
-                        CupertinoFormRow(
-                          prefix: Row(
-                            children: [
-                              Image.asset(
-                                'images/google admob.png',
-                                height: 24,
-                                width: 24,
-                              ),
-                              const Padding(
-                                padding: EdgeInsets.only(left: 16.0),
-                                child: Text('Admob'),
-                              ),
-                            ],
-                          ),
-                          child: CupertinoSwitch(
-                            value: admob,
-                            onChanged: (bool value) {
-                              setState(() {
-                                admob = value;
-                              });
-                            },
-                          ),
-                        ),
-                        CupertinoFormRow(
-                          prefix: Row(
-                            children: [
-                              Image.asset(
-                                'images/unity.png',
-                                height: 24,
-                                width: 24,
-                              ),
-                              const Padding(
-                                padding: EdgeInsets.only(left: 16.0),
-                                child: Text('Unity Ads'),
-                              ),
-                            ],
-                          ),
-                          child: CupertinoSwitch(
-                            value: unity,
-                            onChanged: (bool value) {
-                              setState(() {
-                                unity = value;
-                              });
-                            },
-                          ),
-                        ),
-                        CupertinoTextFormFieldRow(
-                          prefix: const Text('Other'),
-                          controller: _otherController,
-                          placeholder: 'Enter your Other Providers',
-                        ),
-                        // CupertinoButton.filled(
-                        //     onPressed: () {
-                        //
-                        //     },
-                        //     child: const Text('Generate')),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: AdmobBanner(
+            adUnitId: adUnitId,
+            adSize: AdmobBannerSize.BANNER,
+          ),),
         ],
       ),
+
     );
   }
 }

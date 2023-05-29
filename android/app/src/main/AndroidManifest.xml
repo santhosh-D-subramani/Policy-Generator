@@ -1,9 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.privacy.policy.LS.privacy_policy_generator">
+    package="com.privacy.policy.LS">
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID"/>
    <application
-        android:label="privacy_policy_generator"
+        android:label="Policy Generator"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-xxxxx"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

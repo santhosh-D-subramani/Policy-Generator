@@ -1,7 +1,7 @@
 name: policy_generator
 description: A new Flutter project.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
-version: 4.0.0+4  //app version
+version: 4.0.0+4
 environment:
   sdk: '>=3.0.2 <4.0.0'
 dependencies:
